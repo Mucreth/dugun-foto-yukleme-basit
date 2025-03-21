@@ -10,6 +10,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -41,30 +42,98 @@
             margin-bottom: 20px;
             text-align: center;
             line-height: 1.5;
+            font-size: 16px;
         }
         
         .upload-button {
             display: block;
-            width: 200px;
-            height: 50px;
+            width: 80%;
+            height: 60px;
             background-color: #4caf50;
             color: white;
             text-align: center;
-            line-height: 50px;
+            line-height: 60px;
             margin: 30px auto;
-            border-radius: 25px;
+            border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
             border: none;
-            font-size: 16px;
+            font-size: 18px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.2s;
+        }
+        
+        .upload-button:active {
+            background-color: #3e8e41;
+            transform: scale(0.98);
+        }
+        
+        #fileList {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .file-item {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-size {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+            transition: width 0.3s;
         }
         
         #uploadStatus {
             text-align: center;
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
             display: none;
+            font-weight: bold;
         }
         
         .success {
@@ -82,18 +151,20 @@
             color: #0c5460;
         }
         
-        /* Mobil için tıklama alanı iyileştirmeleri */
-        @media (max-width: 480px) {
-            .upload-button {
-                width: 80%;
-                height: 60px;
-                line-height: 60px;
-                font-size: 18px;
-            }
-            
-            h1 {
-                font-size: 22px;
-            }
+        #uploadAgain {
+            display: none;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        #uploadAgain:active {
+            background-color: #3e8e41;
         }
     </style>
 </head>
@@ -105,14 +176,20 @@
         <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
         <button class="upload-button" id="uploadBtn">Fotoğraf/Video Seç</button>
         
+        <div id="fileList"></div>
+        
         <div id="uploadStatus"></div>
+        
+        <button id="uploadAgain">Daha Fazla Yükle</button>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileInput');
             const uploadBtn = document.getElementById('uploadBtn');
+            const fileList = document.getElementById('fileList');
             const uploadStatus = document.getElementById('uploadStatus');
+            const uploadAgain = document.getElementById('uploadAgain');
             
             // Buton tıklandığında dosya seçiciyi aç
             uploadBtn.addEventListener('click', function() {
@@ -122,10 +199,73 @@
             // Dosya seçildiğinde
             fileInput.addEventListener('change', function() {
                 if (fileInput.files.length > 0) {
+                    // Dosya listesini görüntüle
+                    showFileList(fileInput.files);
+                    
                     // Yükleme başlat
                     uploadFiles(fileInput.files);
                 }
             });
+            
+            // Yeniden yükleme butonu
+            uploadAgain.addEventListener('click', function() {
+                resetUI();
+            });
+            
+            // Dosya listesini göster
+            function showFileList(files) {
+                fileList.innerHTML = '';
+                fileList.style.display = 'block';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    // Dosya türüne göre ikon
+                    let iconContent = '📄';
+                    if (file.type.startsWith('image/')) {
+                        iconContent = '🖼️';
+                    } else if (file.type.startsWith('video/')) {
+                        iconContent = '🎬';
+                    }
+                    
+                    // Dosya boyutu formatı
+                    const fileSize = formatFileSize(file.size);
+                    
+                    // Dosya adını kısalt
+                    let fileName = file.name;
+                    if (fileName.length > 25) {
+                        const extension = fileName.split('.').pop();
+                        const name = fileName.substring(0, fileName.length - extension.length - 1);
+                        fileName = name.substring(0, 20) + '...' + extension;
+                    }
+                    
+                    fileItem.innerHTML = `
+                        <div class="file-icon">${iconContent}</div>
+                        <div class="file-info">
+                            <div class="file-name" title="${file.name}">${fileName}</div>
+                            <div class="file-size">${fileSize}</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-${i}"></div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    fileList.appendChild(fileItem);
+                }
+            }
+            
+            // Dosya boyutunu formatla
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
             
             // Dosyaları yükle
             function uploadFiles(files) {
@@ -147,14 +287,41 @@
                 
                 xhr.open('POST', 'upload.php', true);
                 
+                // Yükleme ilerlemesi
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        
+                        // Tüm dosyalar için aynı ilerlemeyi göster
+                        for (let i = 0; i < files.length; i++) {
+                            const progressBar = document.getElementById(`progress-${i}`);
+                            if (progressBar) {
+                                progressBar.style.width = percent + '%';
+                            }
+                        }
+                    }
+                });
+                
                 xhr.onload = function() {
                     if (xhr.status >= 200 && xhr.status < 400) {
                         try {
                             const response = JSON.parse(xhr.responseText);
                             
-                            // Başarılı yükleme
-                            uploadStatus.innerHTML = 'Dosyalar başarıyla yüklendi. Teşekkürler!';
-                            uploadStatus.className = 'success';
+                            if (response.status === 'success' || response.status === 'partial') {
+                                // Başarılı yükleme
+                                uploadStatus.innerHTML = response.message || 'Dosyalar başarıyla yüklendi. Teşekkürler!';
+                                uploadStatus.className = 'success';
+                                
+                                // Yeniden yükleme butonunu göster
+                                uploadAgain.style.display = 'block';
+                            } else {
+                                // Hata
+                                uploadStatus.innerHTML = response.message || 'Yükleme sırasında bir hata oluştu.';
+                                uploadStatus.className = 'error';
+                                
+                                // Yeniden yükleme butonunu göster
+                                uploadAgain.style.display = 'block';
+                            }
                             
                             // Form temizle
                             fileInput.value = '';
@@ -177,6 +344,15 @@
                 };
                 
                 xhr.send(formData);
+            }
+            
+            // Arayüzü sıfırla
+            function resetUI() {
+                fileList.innerHTML = '';
+                fileList.style.display = 'none';
+                uploadStatus.style.display = 'none';
+                uploadAgain.style.display = 'none';
+                fileInput.value = '';
             }
         });
     </script>
