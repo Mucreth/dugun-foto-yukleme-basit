@@ -1,7 +1,8 @@
-php_value upload_max_filesize 100M
-php_value post_max_size 100M
-php_value max_execution_time 300
-php_value max_input_time 300
+php_value upload_max_filesize 6G
+php_value post_max_size 6G
+php_value memory_limit 8G
+php_value max_execution_time 3600
+php_value max_input_time 3600
 
 <IfModule mod_headers.c>
     Header set Cache-Control "no-cache, no-store, must-revalidate"
