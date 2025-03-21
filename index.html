@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ahmet ve İpeğin Nikah ve Düğünü</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f7f7f7;
+            color: #333;
+            padding: 20px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #4a4a4a;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        p {
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        
+        .upload-button {
+            display: block;
+            width: 200px;
+            height: 50px;
+            background-color: #4caf50;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            margin: 30px auto;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+        
+        #uploadStatus {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            background-color: #e9f5ff;
+            color: #0c5460;
+        }
+        
+        /* Mobil için tıklama alanı iyileştirmeleri */
+        @media (max-width: 480px) {
+            .upload-button {
+                width: 80%;
+                height: 60px;
+                line-height: 60px;
+                font-size: 18px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ahmet ve İpeğin Nikah ve Düğünü</h1>
+        <p>Sevgili misafirimiz, özel günümüze ait fotoğraf ve videolarınızı bizimle paylaşmak için aşağıdaki butona tıklayabilirsiniz.</p>
+        
+        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
+        <button class="upload-button" id="uploadBtn">Fotoğraf/Video Seç</button>
+        
+        <div id="uploadStatus"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Buton tıklandığında dosya seçiciyi aç
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Dosya seçildiğinde
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    // Yükleme başlat
+                    uploadFiles(fileInput.files);
+                }
+            });
+            
+            // Dosyaları yükle
+            function uploadFiles(files) {
+                // Yükleme durumunu göster
+                uploadStatus.innerHTML = `Yükleniyor... (${files.length} dosya)`;
+                uploadStatus.className = 'loading';
+                uploadStatus.style.display = 'block';
+                
+                // Form verisi oluştur
+                const formData = new FormData();
+                
+                // Dosyaları ekle
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files[]', files[i]);
+                }
+                
+                // AJAX isteği
+                const xhr = new XMLHttpRequest();
+                
+                xhr.open('POST', 'upload.php', true);
+                
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 400) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            
+                            // Başarılı yükleme
+                            uploadStatus.innerHTML = 'Dosyalar başarıyla yüklendi. Teşekkürler!';
+                            uploadStatus.className = 'success';
+                            
+                            // Form temizle
+                            fileInput.value = '';
+                        } catch (e) {
+                            // JSON parse hatası
+                            uploadStatus.innerHTML = 'Sunucu yanıtı anlaşılamadı.';
+                            uploadStatus.className = 'error';
+                        }
+                    } else {
+                        // HTTP hatası
+                        uploadStatus.innerHTML = 'Yükleme sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+                        uploadStatus.className = 'error';
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    // Bağlantı hatası
+                    uploadStatus.innerHTML = 'Sunucuya bağlanırken bir hata oluştu. İnternet bağlantınızı kontrol edin.';
+                    uploadStatus.className = 'error';
+                };
+                
+                xhr.send(formData);
+            }
+        });
+    </script>
+</body>
+</html>
